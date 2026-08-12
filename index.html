@@ -136,24 +136,61 @@
     const GITHUB_BRANCH = "main";
     const NOVELS_PATH = "novels";
 
+    function stripQuotes(value) {
+      return value.replace(/^["']|["']$/g, "");
+    }
+
     function parseFrontmatter(text) {
       const match = text.match(/^---\s*\n([\s\S]*?)\n---/);
       const data = {};
       if (!match) return data;
-      match[1].split("\n").forEach(line => {
-        const idx = line.indexOf(":");
-        if (idx === -1) return;
-        const key = line.slice(0, idx).trim();
-        let value = line.slice(idx + 1).trim();
-        value = value.replace(/^["']|["']$/g, "");
-        data[key] = value;
-      });
-      return data;
-    }
+      const lines = match[1].split("\n");
+      let i = 0;
+      let versions = [];
 
-    function fileLabel(path) {
-      const name = path.split("/").pop();
-      return name;
+      while (i < lines.length) {
+        const line = lines[i];
+
+        // Old flat "files:" list format from Decap's list widget looks like:
+        // files:
+        //   - label: Standard Version
+        //     file: /novels/foo.docx
+        if (/^files:\s*$/.test(line)) {
+          i++;
+          let current = null;
+          while (i < lines.length && /^(\s{2,}-|\s{4,}\w)/.test(lines[i])) {
+            const itemLine = lines[i];
+            const dashMatch = itemLine.match(/^\s*-\s*(\w+):\s*(.*)$/);
+            const nestedMatch = itemLine.match(/^\s+(\w+):\s*(.*)$/);
+            if (dashMatch) {
+              if (current) versions.push(current);
+              current = {};
+              current[dashMatch[1]] = stripQuotes(dashMatch[2].trim());
+            } else if (nestedMatch && current) {
+              current[nestedMatch[1]] = stripQuotes(nestedMatch[2].trim());
+            }
+            i++;
+          }
+          if (current) versions.push(current);
+          continue;
+        }
+
+        const idx = line.indexOf(":");
+        if (idx !== -1) {
+          const key = line.slice(0, idx).trim();
+          let value = line.slice(idx + 1).trim();
+          value = stripQuotes(value);
+          data[key] = value;
+        }
+        i++;
+      }
+
+      // Old fixed-field format (standard_file / expanded_file) — kept for backward compatibility
+      if (data.standard_file) versions.push({ label: "Standard Version", file: data.standard_file });
+      if (data.expanded_file) versions.push({ label: "Expanded Version", file: data.expanded_file });
+
+      data._versions = versions;
+      return data;
     }
 
     async function loadNovels() {
@@ -179,11 +216,8 @@
         }));
 
         listEl.innerHTML = "";
-        entries.forEach((entry, idx) => {
+        entries.forEach((entry) => {
           const title = entry.title || "Untitled";
-          const files = [];
-          if (entry.standard_file) files.push({ label: "Standard Version", path: entry.standard_file });
-          if (entry.expanded_file) files.push({ label: "Expanded Version", path: entry.expanded_file });
 
           const item = document.createElement("div");
           item.className = "novel-item";
@@ -196,15 +230,16 @@
           const filesWrap = document.createElement("div");
           filesWrap.className = "novel-files";
 
-          if (files.length === 0) {
+          const versions = entry._versions || [];
+          if (versions.length === 0) {
             filesWrap.innerHTML = '<p class="status-msg">No files uploaded yet.</p>';
           } else {
-            files.forEach(f => {
+            versions.forEach((v, i) => {
               const a = document.createElement("a");
-              a.className = "btn " + (f.label.startsWith("Standard") ? "btn-standard" : "btn-expanded");
-              a.href = f.path;
+              a.className = "btn " + (i % 2 === 0 ? "btn-standard" : "btn-expanded");
+              a.href = v.file;
               a.setAttribute("download", "");
-              a.textContent = f.label;
+              a.textContent = v.label || `Version ${i + 1}`;
               filesWrap.appendChild(a);
             });
           }
