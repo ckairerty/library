@@ -1,0 +1,18 @@
+backend:
+  name: git-gateway
+  branch: main
+
+media_folder: "novels"
+public_folder: "/novels"
+
+collections:
+  - name: "novels"
+    label: "Novels"
+    folder: "novels"
+    create: true
+    slug: "{{slug}}"
+    fields:
+      - { label: "Title", name: "title", widget: "string" }
+      - { label: "Folder Name", name: "slug", widget: "string", hint: "e.g. first-novel, second-novel" }
+      - { label: "Standard Version File", name: "standard_file", widget: "file" }
+      - { label: "Expanded Version File", name: "expanded_file", widget: "file", required: false }
