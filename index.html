@@ -69,17 +69,157 @@
     font-size: 0.8rem;
     color: #64748b;
   }
+
+  body { align-items: flex-start; }
+  .card { margin: 60px auto; }
+
+  .novel-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    text-align: left;
+  }
+  .novel-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .novel-title-btn {
+    width: 100%;
+    background: none;
+    border: none;
+    color: #f1f5f9;
+    font-size: 1.05rem;
+    font-weight: 600;
+    padding: 16px 20px;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .novel-title-btn:hover { background: rgba(255,255,255,0.05); }
+  .novel-title-btn .chevron {
+    transition: transform 0.2s ease;
+    font-size: 0.85rem;
+    color: #94a3b8;
+  }
+  .novel-item.open .chevron { transform: rotate(180deg); }
+  .novel-files {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+    padding: 0 20px 20px;
+  }
+  .novel-item.open .novel-files { display: flex; }
+  .status-msg {
+    color: #94a3b8;
+    font-size: 0.95rem;
+    padding: 12px 0;
+  }
 </style>
 </head>
 <body>
   <div class="card">
-    <h1>📖 Welcome to my first novel</h1>
-    <p class="subtitle">Hello, welcome to my first novel — you can download it from the web and read it locally.</p>
-    <div class="buttons">
-      <a class="btn btn-standard" href="story.docx" download>The Standard Version</a>
-      <a class="btn btn-expanded" href="story expanded.docx" download>The Expanded Version</a>
+    <h1>📖 Welcome to my library</h1>
+    <p class="subtitle">Hello, welcome to my novels — pick a title below and download it to read locally.</p>
+    <div class="novel-list" id="novelList">
+      <p class="status-msg">Loading novels…</p>
     </div>
     <footer>Files will be downloaded directly to your device.</footer>
   </div>
+
+  <script>
+    const GITHUB_OWNER = "ckairerty";
+    const GITHUB_REPO = "library";
+    const GITHUB_BRANCH = "main";
+    const NOVELS_PATH = "novels";
+
+    function parseFrontmatter(text) {
+      const match = text.match(/^---\s*\n([\s\S]*?)\n---/);
+      const data = {};
+      if (!match) return data;
+      match[1].split("\n").forEach(line => {
+        const idx = line.indexOf(":");
+        if (idx === -1) return;
+        const key = line.slice(0, idx).trim();
+        let value = line.slice(idx + 1).trim();
+        value = value.replace(/^["']|["']$/g, "");
+        data[key] = value;
+      });
+      return data;
+    }
+
+    function fileLabel(path) {
+      const name = path.split("/").pop();
+      return name;
+    }
+
+    async function loadNovels() {
+      const listEl = document.getElementById("novelList");
+      try {
+        const apiUrl = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${NOVELS_PATH}?ref=${GITHUB_BRANCH}`;
+        const res = await fetch(apiUrl);
+        if (!res.ok) throw new Error("Could not list novels");
+        const items = await res.json();
+        const mdFiles = items.filter(i => i.name.endsWith(".md"));
+
+        if (mdFiles.length === 0) {
+          listEl.innerHTML = '<p class="status-msg">No novels published yet.</p>';
+          return;
+        }
+
+        const entries = await Promise.all(mdFiles.map(async (file) => {
+          const rawUrl = `https://raw.githubusercontent.com/${GITHUB_OWNER}/${GITHUB_REPO}/${GITHUB_BRANCH}/${NOVELS_PATH}/${file.name}`;
+          const rawRes = await fetch(rawUrl);
+          const rawText = await rawRes.text();
+          const data = parseFrontmatter(rawText);
+          return data;
+        }));
+
+        listEl.innerHTML = "";
+        entries.forEach((entry, idx) => {
+          const title = entry.title || "Untitled";
+          const files = [];
+          if (entry.standard_file) files.push({ label: "Standard Version", path: entry.standard_file });
+          if (entry.expanded_file) files.push({ label: "Expanded Version", path: entry.expanded_file });
+
+          const item = document.createElement("div");
+          item.className = "novel-item";
+
+          const btn = document.createElement("button");
+          btn.className = "novel-title-btn";
+          btn.innerHTML = `<span>${title}</span><span class="chevron">▼</span>`;
+          btn.addEventListener("click", () => item.classList.toggle("open"));
+
+          const filesWrap = document.createElement("div");
+          filesWrap.className = "novel-files";
+
+          if (files.length === 0) {
+            filesWrap.innerHTML = '<p class="status-msg">No files uploaded yet.</p>';
+          } else {
+            files.forEach(f => {
+              const a = document.createElement("a");
+              a.className = "btn " + (f.label.startsWith("Standard") ? "btn-standard" : "btn-expanded");
+              a.href = f.path;
+              a.setAttribute("download", "");
+              a.textContent = f.label;
+              filesWrap.appendChild(a);
+            });
+          }
+
+          item.appendChild(btn);
+          item.appendChild(filesWrap);
+          listEl.appendChild(item);
+        });
+      } catch (err) {
+        listEl.innerHTML = '<p class="status-msg">Could not load novels right now.</p>';
+        console.error(err);
+      }
+    }
+
+    loadNovels();
+  </script>
 </body>
 </html>
