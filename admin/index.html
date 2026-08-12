@@ -1,85 +1,23 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My First Novel</title>
-<style>
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #1e293b, #0f172a);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-    color: #f1f5f9;
-    padding: 20px;
-  }
-  .card {
-    max-width: 560px;
-    width: 100%;
-    text-align: center;
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
-    border-radius: 16px;
-    padding: 48px 32px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
-  }
-  h1 {
-    font-size: 1.8rem;
-    margin-bottom: 12px;
-  }
-  p.subtitle {
-    color: #94a3b8;
-    font-size: 1.05rem;
-    margin-bottom: 36px;
-    line-height: 1.5;
-  }
-  .buttons {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-  }
-  a.btn {
-    display: inline-block;
-    text-decoration: none;
-    padding: 14px 24px;
-    border-radius: 10px;
-    font-weight: 600;
-    font-size: 1rem;
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
-  }
-  a.btn:hover {
-    transform: translateY(-2px);
-  }
-  .btn-standard {
-    background: #38bdf8;
-    color: #0f172a;
-    box-shadow: 0 6px 20px rgba(56,189,248,0.35);
-  }
-  .btn-expanded {
-    background: #a78bfa;
-    color: #0f172a;
-    box-shadow: 0 6px 20px rgba(167,139,250,0.35);
-  }
-  footer {
-    margin-top: 36px;
-    font-size: 0.8rem;
-    color: #64748b;
-  }
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Content Manager</title>
 </head>
 <body>
-  <div class="card">
-    <h1>📖 Welcome to my first novel</h1>
-    <p class="subtitle">Hello, welcome to my first novel — you can download it from the web and read it locally.</p>
-    <div class="buttons">
-      <a class="btn btn-standard" href="story.docx" download>The Standard Version</a>
-      <a class="btn btn-expanded" href="story expanded.docx" download>The Expanded Version</a>
-    </div>
-    <footer>Files will be downloaded directly to your device.</footer>
-  </div>
+  <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+  <script src="https://unpkg.com/decap-cms@^3.0.0/dist/decap-cms.js"></script>
+  <script>
+    if (window.netlifyIdentity) {
+      window.netlifyIdentity.on("init", (user) => {
+        if (!user) {
+          window.netlifyIdentity.on("login", () => {
+            document.location.href = "/admin/";
+          });
+        }
+      });
+    }
+  </script>
 </body>
 </html>
