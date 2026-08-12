@@ -14,5 +14,9 @@ collections:
     fields:
       - { label: "Title", name: "title", widget: "string" }
       - { label: "Folder Name", name: "slug", widget: "string", hint: "e.g. first-novel, second-novel" }
-      - { label: "Standard Version File", name: "standard_file", widget: "file" }
-      - { label: "Expanded Version File", name: "expanded_file", widget: "file", required: false }
+      - label: "Files"
+        name: "files"
+        widget: "list"
+        fields:
+          - { label: "Label", name: "label", widget: "string", hint: "e.g. Standard Version, Expanded Version, Illustrated Edition" }
+          - { label: "File", name: "file", widget: "file" }
