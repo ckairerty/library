@@ -1,10 +1,8 @@
 backend:
   name: git-gateway
   branch: main
-
 media_folder: "novels"
 public_folder: "/novels"
-
 collections:
   - name: "novels"
     label: "Novels"
@@ -20,3 +18,4 @@ collections:
         fields:
           - { label: "Label", name: "label", widget: "string", hint: "e.g. Standard Version, Expanded Version, Illustrated Edition" }
           - { label: "File", name: "file", widget: "file" }
+          - { label: "Button Color", name: "color", widget: "color", default: "#38bdf8", hint: "Pick a color for this button" }
